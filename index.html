@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>林氏羽毛球 · 积分榜</title>
+<style>
+  :root{
+    --bg:#33C2A2;
+    --bg-2:#2ba88a;
+    --panel:rgba(255,255,255,.88);
+    --panel-2:rgba(255,255,255,.94);
+    --line:rgba(255,255,255,.25);
+    --line-2:rgba(255,255,255,.4);
+    --text:#134F5B;
+    --muted:#4d7a6e;
+    --gold:#f6c453;
+    --silver:#b9c7d1;
+    --bronze:#cd8a5b;
+    --accent:#134F5B;
+    --accent-2:#134F5B;
+    --male:#3d8ee0;
+    --female:#e0608a;
+    --danger:#d94a3a;
+    --shadow:0 18px 50px rgba(0,0,0,.12);
+    --radius:18px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:"HarmonyOS Sans SC","PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+    background:#33C2A2;
+    background-attachment:fixed;
+    color:var(--text);
+    min-height:100vh;
+    padding:64px 18px 48px;
+    position:relative;
+    overflow-x:hidden;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;opacity:.3;z-index:0;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'><g fill='none' stroke='%23fff' stroke-opacity='0.08' stroke-width='1'><circle cx='48' cy='48' r='16'/><circle cx='48' cy='48' r='24'/><circle cx='48' cy='48' r='34'/><circle cx='48' cy='48' r='45'/><path d='M48 3v90M3 48h90'/><path d='M48 14l5 8h-10zM48 82l5-8h-10zM14 48l8-5v10zM82 48l-8-5v10z'/></g></svg>");
+  }
+  body::after{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.045;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
+  }
+  /* 顶部固定栏 */
+  .top-bar{
+    position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;justify-content:space-between;
+    padding:10px 22px;box-sizing:border-box;
+    background:rgba(51,194,162,.92);backdrop-filter:blur(10px);
+    box-shadow:0 2px 16px rgba(0,0,0,.06);
+  }
+  .top-bar .logo{
+    display:inline-flex;align-items:center;gap:10px;
+    background:rgba(0,0,0,.08);border:1px solid rgba(255,255,255,.15);
+    padding:6px 14px 6px 10px;border-radius:12px;backdrop-filter:blur(8px);
+    box-shadow:0 4px 16px rgba(0,0,0,.08);
+  }
+  .top-bar .logo img{height:22px;width:auto;display:block;filter:brightness(0) invert(1)}
+  .top-bar .logo span{font-size:13px;font-weight:700;color:rgba(255,255,255,.9);letter-spacing:1px}
+  .top-bar .badge-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  @media (max-width:720px){
+    .top-bar{flex-wrap:wrap;gap:8px;padding:10px 0}
+    .top-bar .logo{padding:5px 10px 5px 8px}
+    .top-bar .logo img{height:16px}
+    .top-bar .logo span{font-size:11px}
+  }
+
+  .wrap{max-width:1180px;margin:0 auto;position:relative;z-index:2}
+
+  header{text-align:center;margin-bottom:26px;animation:rise .7s ease both}
+  .kicker{
+    display:inline-flex;align-items:center;gap:8px;font-size:12px;letter-spacing:3px;
+    color:rgba(255,255,255,.9);opacity:.9;margin-bottom:10px;text-transform:uppercase;
+  }
+  .kicker::before,.kicker::after{content:"";width:26px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.7))}
+  .kicker::after{background:linear-gradient(90deg,rgba(255,255,255,.7),transparent)}
+  h1{
+    font-size:clamp(30px,5.4vw,52px);font-weight:900;letter-spacing:2px;line-height:1.15;
+    color:rgba(255,255,255,.95);
+    text-shadow:0 4px 30px rgba(0,0,0,.15);
+  }
+  h1 .hint{
+    background:linear-gradient(90deg,var(--gold),#ffd98a);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .sub{margin-top:8px;color:rgba(255,255,255,.85);font-size:13px;letter-spacing:4px}
+  .badge{
+    display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;
+    padding:6px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.2);
+    background:rgba(255,255,255,.08);backdrop-filter:blur(6px);color:rgba(255,255,255,.9);
+  }
+  .badge .dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+  .badge.live{border-color:rgba(255,255,255,.45);color:rgba(255,255,255,.95)}
+  .badge.live .dot{background:#fff;box-shadow:0 0 0 0 rgba(255,255,255,.6);animation:pulse 1.8s infinite}
+  .badge.off{border-color:rgba(255,255,255,.35);color:rgba(255,255,255,.75)}
+  .badge.off .dot{background:rgba(255,255,255,.5)}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,255,255,.55)}70%{box-shadow:0 0 0 8px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}
+  .badge .dot.static{animation:none}
+
+  /* 统计卡片 */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:26px}
+  .stat{
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:16px 18px;backdrop-filter:blur(10px);box-shadow:var(--shadow);
+    display:flex;flex-direction:column;gap:4px;position:relative;overflow:hidden;animation:rise .7s ease both;
+  }
+  .stat:nth-child(2){animation-delay:.06s}.stat:nth-child(3){animation-delay:.12s}.stat:nth-child(4){animation-delay:.18s}
+  .stat::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);opacity:.8}
+  .stat.gold::before{background:linear-gradient(180deg,var(--gold),#b8860b)}
+  .stat.male::before{background:var(--male)}
+  .stat.female::before{background:var(--female)}
+  .stat .label{font-size:12px;color:var(--muted);letter-spacing:1px}
+  .stat .num{font-size:28px;font-weight:900;font-variant-numeric:tabular-nums}
+  .stat .num small{font-size:13px;font-weight:600;color:var(--muted);margin-left:3px}
+  .stat .foot{font-size:11px;color:var(--muted);opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* 双榜单网格 */
+  .boards{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start}
+  @media (max-width:900px){.boards{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
+  .board{
+    background:var(--panel-2);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);overflow:hidden;backdrop-filter:blur(12px);animation:rise .7s ease both;
+  }
+  .board.male{animation-delay:.1s}.board.female{animation-delay:.2s}
+  .board-head{
+    padding:18px 22px;display:flex;align-items:center;justify-content:space-between;gap:10px;
+    border-bottom:1px solid var(--line);
+  }
+  .board-title{display:flex;align-items:center;gap:12px}
+  .board-icon{
+    width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:22px;
+    background:rgba(19,79,91,.1);border:1px solid rgba(19,79,91,.25);
+  }
+  .board-title .t{font-size:20px;font-weight:900;letter-spacing:1px}
+  .board-title .en{font-size:11px;color:var(--muted);letter-spacing:2px;margin-top:2px}
+  .board-count{font-size:12px;color:var(--muted);background:rgba(255,255,255,.05);border:1px solid var(--line);padding:5px 12px;border-radius:999px;white-space:nowrap}
+  .board-count b{color:var(--text)}
+
+  /* 前三名 */
+  .podium{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:18px 18px 8px}
+  .pod{
+    border-radius:16px;padding:16px 8px 14px;text-align:center;position:relative;overflow:hidden;
+    border:1px solid var(--line-2);background:rgba(255,255,255,.03);
+  }
+  .pod .crown{font-size:24px;line-height:1;margin-bottom:6px;filter:drop-shadow(0 3px 8px rgba(0,0,0,.35))}
+  .pod .p-rank{font-size:11px;letter-spacing:2px;opacity:.95;font-weight:700}
+  .pod .p-name{font-size:18px;font-weight:900;margin-top:7px;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pod .p-tier{font-size:11px;margin-top:4px;font-weight:700;opacity:.95}
+  .pod .p-power{font-size:11px;margin-top:2px;opacity:.85}
+
+  .pod.gold{
+    color:#4a3200;
+    background:
+      radial-gradient(140% 120% at 20% 0%, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 46%),
+      linear-gradient(165deg,#ffe9a8 0%, #f6c453 38%, #e0a928 74%, #c58f1e 100%);
+    border:1px solid #ffe9a8;
+    box-shadow:0 10px 30px rgba(246,196,83,.35), inset 0 1px 0 rgba(255,255,255,.65);
+  }
+  .pod.gold::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background:repeating-linear-gradient(115deg,rgba(255,255,255,.06) 0 2px,transparent 2px 9px);}
+  .pod.gold .crown{filter:drop-shadow(0 3px 7px rgba(120,80,0,.4))}
+  .pod.gold .p-rank{color:rgba(90,62,0,.72)}
+
+  .pod.silver{
+    color:#33404d;
+    background:
+      radial-gradient(140% 120% at 20% 0%, rgba(255,255,255,.7) 0%, rgba(255,255,255,0) 46%),
+      linear-gradient(165deg,#ffffff 0%, #d7dee6 30%, #a8b4c0 68%, #8b98a6 100%);
+    border:1px solid #ffffff;
+    box-shadow:0 10px 28px rgba(150,165,180,.28), inset 0 1px 0 rgba(255,255,255,.85);
+  }
+  .pod.silver::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background:repeating-linear-gradient(115deg,rgba(255,255,255,.1) 0 2px,transparent 2px 9px);}
+  .pod.silver .crown{filter:drop-shadow(0 3px 7px rgba(40,55,70,.35))}
+  .pod.silver .p-rank{color:rgba(45,60,75,.7)}
+
+  .pod.bronze{
+    background:linear-gradient(160deg,rgba(205,138,91,.18),rgba(205,138,91,.04));
+    border-color:rgba(205,138,91,.5);color:var(--text);
+  }
+  .pod.bronze .p-rank{color:var(--muted)}
+
+  /* 胜率 */
+  .wr{font-weight:700;font-variant-numeric:tabular-nums}
+  .wr-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:700}
+  .wr-badge.good{background:rgba(26,157,86,.14);color:#1a9d56;border:1px solid rgba(26,157,86,.3)}
+  .wr-badge.mid{background:rgba(240,173,78,.14);color:#d98a1a;border:1px solid rgba(240,173,78,.3)}
+  .wr-badge.low{background:rgba(220,90,60,.12);color:#c94f3d;border:1px solid rgba(220,90,60,.25)}
+  .wr-badge small{font-size:10px;font-weight:600;opacity:.75}
+  .wr-na{color:var(--muted);opacity:.6}
+
+  /* 表格 */
+  .tbl-wrap{padding:10px 18px 18px}
+  table{width:100%;border-collapse:collapse}
+  thead th{
+    font-size:11px;color:var(--muted);text-align:left;font-weight:600;letter-spacing:2px;
+    padding:10px 12px;border-bottom:1px solid var(--line-2);white-space:nowrap;
+  }
+  tbody td{padding:9px 12px;border-bottom:1px solid var(--line);font-size:14px;white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr{transition:background .18s ease}
+  tbody tr:hover{background:rgba(19,79,91,.06)}
+  .rank{font-weight:800;font-variant-numeric:tabular-nums;color:var(--muted);width:44px}
+  .rank.top1{color:var(--gold)}.rank.top2{color:var(--silver)}.rank.top3{color:var(--bronze)}
+  .player{display:flex;align-items:center;gap:10px;font-weight:600}
+  .gender-chip{font-size:10px;padding:2px 7px;border-radius:6px;font-weight:700;letter-spacing:1px;flex:none}
+  .gender-chip.m{background:rgba(19,79,91,.1);color:#134F5B;border:1px solid rgba(19,79,91,.25)}
+  .gender-chip.f{background:rgba(19,79,91,.08);color:#134F5B;border:1px solid rgba(19,79,91,.2)}
+  .tier{font-size:12px;color:#134F5B;background:rgba(19,79,91,.1);border:1px solid rgba(19,79,91,.2);padding:3px 9px;border-radius:999px;font-weight:600}
+  .pts{font-weight:900;font-variant-numeric:tabular-nums;font-size:16px;color:var(--accent)}
+  .pts small{font-size:11px;font-weight:600;color:var(--muted);margin-left:2px}
+  .medal{font-size:13px}
+  .row-top1 td{background:rgba(246,196,83,.05)}
+  .row-top2 td{background:rgba(185,199,209,.04)}
+  .row-top3 td{background:rgba(205,138,91,.04)}
+  .row-top1 .player{color:var(--gold)}
+  .row-top2 .player{color:var(--silver)}
+  .row-top3 .player{color:var(--bronze)}
+
+  /* 比赛记录 */
+  .match-section{
+    background:var(--panel-2);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);overflow:hidden;backdrop-filter:blur(12px);margin-top:26px;animation:rise .7s ease both;
+  }
+  .match-head{
+    padding:18px 22px;display:flex;align-items:center;justify-content:space-between;gap:14px;
+    border-bottom:1px solid var(--line);flex-wrap:wrap;
+  }
+  .match-title{display:flex;align-items:center;gap:12px}
+  .match-title .t{font-size:20px;font-weight:900;letter-spacing:1px}
+  .match-title .en{font-size:11px;color:var(--muted);letter-spacing:2px;margin-top:2px}
+  .match-filters{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .match-filters select,.match-filters input{
+    font-size:13px;padding:7px 12px;border-radius:10px;border:1px solid var(--line-2);
+    background:rgba(255,255,255,.8);color:var(--text);font-family:inherit;outline:none;
+  }
+  .match-filters select:focus,.match-filters input:focus{border-color:var(--accent)}
+  .match-tbl-wrap{padding:10px 22px 22px}
+  .match-tbl thead th:nth-child(1){width:120px}
+  .match-tbl tbody td{font-size:14px}
+  .vs{color:var(--muted);font-weight:700;padding:0 4px}
+  .score-badge{
+    display:inline-block;min-width:52px;text-align:center;font-weight:900;color:var(--accent);
+    background:rgba(19,79,91,.08);border:1px solid rgba(19,79,91,.18);padding:2px 10px;border-radius:8px;
+  }
+  .win-tag{
+    display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;
+    background:rgba(19,79,91,.1);color:#134F5B;border:1px solid rgba(19,79,91,.2);
+  }
+  .match-note{font-size:12px;color:var(--muted)}
+  .empty{text-align:center;color:var(--muted);padding:28px 0;font-size:13px}
+
+  footer{margin-top:28px;text-align:center;color:var(--muted);font-size:12px;line-height:1.9;animation:rise .7s ease both}
+  footer .src{opacity:.7}
+
+  .toast{
+    position:fixed;left:50%;bottom:32px;transform:translate(-50%,80px);z-index:99;
+    background:rgba(255,255,255,.95);border:1px solid rgba(0,0,0,.08);color:var(--text);
+    padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;
+    box-shadow:0 14px 40px rgba(0,0,0,.1);backdrop-filter:blur(10px);
+    transition:transform .35s cubic-bezier(.2,.9,.3,1.2);pointer-events:none;
+    display:flex;align-items:center;gap:8px;
+  }
+  .toast.show{transform:translate(-50%,0)}
+
+  @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="top-bar">
+    <a class="logo" href="#" title="Linsy 林氏家居">
+      <img src="data:image/png;base64,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" alt="Linsy">
+      <span></span>
+    </a>
+    <div class="badge-group">
+      <span id="statusBadge" class="badge off"><span class="dot"></span><span id="statusText">连接中…</span></span>
+      <span class="badge"><span class="dot static"></span>数据源：榜单表格.xlsx</span>
+      <span class="badge"><span class="dot static"></span>更新于 <span id="updatedAt">—</span></span>
+    </div>
+  </div>
+
+  <header>
+    <div class="kicker">LINSY · BADMINTON CLUB</div>
+    <h1>林氏羽毛球 <span class="hint">积分榜</span></h1>
+    <div class="sub">以分论英雄 · 一局定高下</div>
+  </header>
+
+  <section class="stats">
+    <div class="stat male">
+      <span class="label">🏸 男球员</span>
+      <span class="num"><span id="maleCount">0</span><small>人</small></span>
+      <span class="foot">男子积分排位</span>
+    </div>
+    <div class="stat female">
+      <span class="label">🏸 女球员</span>
+      <span class="num"><span id="femaleCount">0</span><small>人</small></span>
+      <span class="foot">女子积分排位</span>
+    </div>
+    <div class="stat gold">
+      <span class="label">👑 男子积分榜首</span>
+      <span class="num" id="topMale" style="font-size:20px;line-height:1.5">—</span>
+      <span class="foot" id="topMalePts">男子积分第一</span>
+    </div>
+    <div class="stat gold">
+      <span class="label">👑 女子积分榜首</span>
+      <span class="num" id="topFemale" style="font-size:20px;line-height:1.5">—</span>
+      <span class="foot" id="topFemalePts">女子积分第一</span>
+    </div>
+  </section>
+
+  <section class="boards">
+    <!-- 男子积分榜 -->
+    <div class="board male">
+      <div class="board-head">
+        <div class="board-title">
+          <div class="board-icon">🏸</div>
+          <div><div class="t">男子积分榜</div><div class="en">MEN'S POINTS</div></div>
+        </div>
+        <span class="board-count">共 <b id="maleTotal">0</b> 人</span>
+      </div>
+      <div class="podium" id="malePodium"></div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>排名</th><th>球员</th><th>累计积分</th><th>胜率</th><th>段位</th></tr></thead>
+          <tbody id="maleBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 女子积分榜 -->
+    <div class="board female">
+      <div class="board-head">
+        <div class="board-title">
+          <div class="board-icon">🏸</div>
+          <div><div class="t">女子积分榜</div><div class="en">WOMEN'S POINTS</div></div>
+        </div>
+        <span class="board-count">共 <b id="femaleTotal">0</b> 人</span>
+      </div>
+      <div class="podium" id="femalePodium"></div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>排名</th><th>球员</th><th>累计积分</th><th>胜率</th><th>段位</th></tr></thead>
+          <tbody id="femaleBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 比赛记录 -->
+  <section class="match-section">
+    <div class="match-head">
+      <div class="match-title">
+        <div class="board-icon">🏸</div>
+        <div><div class="t">比赛记录</div><div class="en">MATCH RECORDS</div></div>
+      </div>
+      <div class="match-filters">
+        <select id="dateFilter"><option value="">全部日期</option></select>
+        <select id="playerFilter"><option value="">全部选手</option></select>
+        <input type="text" id="matchSearch" placeholder="🔍 搜索比分/选手…">
+      </div>
+    </div>
+    <div class="match-tbl-wrap">
+      <table class="match-tbl">
+        <thead><tr><th>日期</th><th>对阵</th><th>比分</th><th>胜者</th><th>备注</th></tr></thead>
+        <tbody id="matchBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    <div class="src">数据源：榜单表格.xlsx（积分 & 比赛记录）</div>
+  </footer>
+</div>
+
+<div class="toast" id="toast">📣 积分榜已更新</div>
+
+<script>
+/* ============================================================
+   数据注入点：服务端/构建脚本会将 JSON 与端口写入下方常量
+   ============================================================ */
+const DATA = {"updated_at":"2026-09-10 11:00:09","version":"fc6f2367d7","total":34,"male":23,"female":11,"top1":"Jamo","players":[{"rank":17,"name":"Jamo","gender":"男","points":50.0},{"rank":31,"name":"阿鑫","gender":"男","points":25.0},{"rank":2,"name":"卡罗","gender":"女","points":20.0},{"rank":24,"name":"大声发","gender":"男","points":10.0},{"rank":26,"name":"月白","gender":"男","points":10.0},{"rank":9,"name":"嘉俊","gender":"男","points":5.0},{"rank":25,"name":"Loewen","gender":"女","points":5.0},{"rank":30,"name":"小龙","gender":"男","points":5.0},{"rank":32,"name":"糯米","gender":"男","points":5.0},{"rank":33,"name":"叶岚","gender":"女","points":5.0},{"rank":34,"name":"黑柴","gender":"男","points":5.0},{"rank":1,"name":"Joeyliang","gender":"男","points":0.0},{"rank":3,"name":"文扬","gender":"男","points":0.0},{"rank":4,"name":"水母","gender":"女","points":0.0},{"rank":5,"name":"艺松松","gender":"男","points":0.0},{"rank":6,"name":"金鱼","gender":"女","points":0.0},{"rank":7,"name":"何悦","gender":"女","points":0.0},{"rank":8,"name":"忠瑞","gender":"男","points":0.0},{"rank":10,"name":"link","gender":"男","points":0.0},{"rank":11,"name":"新壹","gender":"男","points":0.0},{"rank":12,"name":"阿尼","gender":"男","points":0.0},{"rank":13,"name":"君君","gender":"女","points":0.0},{"rank":14,"name":"紫棋","gender":"女","points":0.0},{"rank":15,"name":"Smile","gender":"女","points":0.0},{"rank":16,"name":"青——","gender":"男","points":0.0},{"rank":18,"name":"小波同学","gender":"男","points":0.0},{"rank":19,"name":"文鑫","gender":"男","points":0.0},{"rank":20,"name":"伟城","gender":"男","points":0.0},{"rank":21,"name":"米酒","gender":"女","points":0.0},{"rank":22,"name":"秋如","gender":"男","points":0.0},{"rank":23,"name":"大灰","gender":"男","points":0.0},{"rank":27,"name":"梦泽","gender":"男","points":0.0},{"rank":28,"name":"小Q","gender":"女","points":0.0},{"rank":29,"name":"游鱼","gender":"男","points":0.0}],"matches":[{"date":"2026-09-07","a":"Jamo","score":"21:8","b":"糯米","winner":"Jamo","note":"男单"},{"date":"2026-09-07","a":"阿鑫","score":"21:12","b":"小龙","winner":"阿鑫","note":"男单"},{"date":"2026-09-07","a":"阿鑫","score":"21:19","b":"Jamo","winner":"阿鑫","note":"男单"},{"date":"2026-09-07","a":"糯米","score":"22:20","b":"小龙","winner":"糯米","note":"男单"},{"date":"2026-09-09","a":"卡罗","score":"15:8","b":"Loewen","winner":"卡罗","note":"女单"},{"date":"2026-09-09","a":"卡罗","score":"15:5","b":"叶岚","winner":"卡罗","note":"女单"},{"date":"2026-09-09","a":"月白","score":"15:10","b":"阿鑫","winner":"月白","note":"男单"},{"date":"2026-09-09","a":"Jamo","score":"15:8","b":"嘉俊","winner":"Jamo","note":"男单"},{"date":"2026-09-09","a":"大声发","score":"15:10","b":"黑柴","winner":"大声发","note":"男单"},{"date":"2026-09-09","a":"Jamo","score":"15:12","b":"月白","winner":"Jamo","note":"男单"},{"date":"2026-09-09","a":"Jamo","score":"17:15","b":"大声发","winner":"Jamo","note":"男单"}],"lan_url":"http://10.30.23.239:8765/"};
+const PORT = 8765;
+
+let lastVersion = DATA.version;
+let renderedVersion = DATA.version;
+let toastTimer = null;
+
+
+/* ---------- 胜率计算 ---------- */
+function calcWinrate(p, matches){
+  // 统计该球员的胜场/总场
+  let wins = 0, total = 0;
+  for (const m of matches || []){
+    if (m.a === p.name || m.b === p.name){
+      total++;
+      if (m.winner === p.name) wins++;
+    }
+  }
+  if (total === 0) return null; // 无比赛记录
+  return { wins, total, rate: Math.round(wins / total * 100) };
+}
+
+/* ---------- 工具：段位 ---------- */
+
+function winrateCell(p){
+  const wr = calcWinrate(p, window.__matches || []);
+  if (!wr) return '<span class="wr-na">—</span>';
+  return `<span class="wr-badge ${wr.rate >= 60 ? 'good' : wr.rate >= 40 ? 'mid' : 'low'}">${wr.rate}%<small> ${wr.wins}胜${wr.total - wr.wins}负</small></span>`;
+}
+
+function tier(r, N){
+  if (r === 1) return '王者';
+  if (r <= 3) return '大师';
+  if (r <= Math.max(4, Math.ceil(N * 0.30))) return '钻石';
+  if (r <= Math.max(7, Math.ceil(N * 0.60))) return '黄金';
+  if (r <= Math.ceil(N * 0.80)) return '白银';
+  return '青铜';
+}
+
+function fmtPts(p){
+  return Number.isFinite(p) ? (Math.round(p * 10) / 10) : 0;
+}
+
+/* ---------- 前三名 ---------- */
+function podiumHTML(list){
+  if (!list.length) return '';
+  const items = [1,2,3];
+  const names = ['','冠军','亚军','季军'];
+  const medals = ['','👑','🥈','🥉'];
+  const cls = ['','gold','silver','bronze'];
+  const tiers = ['','王者','大师','钻石'];
+  let h = '';
+  for (const i of items){
+    if (i > list.length) break;
+    const p = list[i - 1];
+    h += `<div class="pod ${cls[i]}">
+      <div class="crown">${medals[i]}</div>
+      <div class="p-rank">${names[i]} · 积分榜</div>
+      <div class="p-name">${p.name}</div>
+      <div class="p-tier">${tiers[i]}</div>
+      <div class="p-power">${fmtPts(p.points)} 分</div>
+    </div>`;
+  }
+  return h;
+}
+
+function tableHTML(list, matches){
+  let h = '';
+  for (let i = 0; i < list.length; i++){
+    const p = list[i];
+    const rowCls = p.rank <= 3 ? ` class="row-top${p.rank}"` : '';
+    const medal = p.rank <= 3 ? `<span class="medal">${p.rank===1?'🥇':p.rank===2?'🥈':'🥉'}</span> ` : '';
+    const rankCls = p.rank <= 3 ? ` rank top${p.rank}` : ' rank';
+    h += `<tr${rowCls}>
+      <td class="${rankCls}">${p.rank}</td>
+      <td><div class="player">${medal}${p.name}<span class="gender-chip ${p.gender==='男'?'m':'f'}">${p.gender}</span></div></td>
+      <td class="pts">${fmtPts(p.points)}<small>分</small></td>
+      <td class="wr">${winrateCell(p)}</td>
+      <td><span class="tier">${tier(p.rank, list.length)}</span></td>
+    </tr>`;
+  }
+  return h;
+}
+
+function render(data){
+  const players = data.players || [];
+  window.__matches = data.matches || [];  // 提前设置，供胜率计算使用
+  // 仅展示有积分（>0）的球员，0 分不展示
+  const scored = players.filter(p => p.points > 0);
+  const men = scored.filter(p => p.gender === '男').map((p, i) => ({...p, rank: i + 1}));
+  const women = scored.filter(p => p.gender === '女').map((p, i) => ({...p, rank: i + 1}));
+
+  document.getElementById('maleCount').textContent = men.length;
+  document.getElementById('femaleCount').textContent = women.length;
+  document.getElementById('maleTotal').textContent = men.length;
+  document.getElementById('femaleTotal').textContent = women.length;
+  document.getElementById('topMale').textContent = men.length ? men[0].name : '—';
+  document.getElementById('topFemale').textContent = women.length ? women[0].name : '—';
+  document.getElementById('topMalePts').textContent = men.length ? fmtPts(men[0].points) + ' 分领跑' : '男子积分第一';
+  document.getElementById('topFemalePts').textContent = women.length ? fmtPts(women[0].points) + ' 分领跑' : '女子积分第一';
+  document.getElementById('updatedAt').textContent = data.updated_at || '—';
+
+  document.getElementById('malePodium').innerHTML = podiumHTML(men);
+  document.getElementById('femalePodium').innerHTML = podiumHTML(women);
+  document.getElementById('maleBody').innerHTML = tableHTML(men, data.matches);
+  document.getElementById('femaleBody').innerHTML = tableHTML(women, data.matches);
+
+  renderMatches(data.matches || []);
+}
+
+/* ---------- 比赛记录 ---------- */
+let allMatches = [];
+
+function renderMatches(matches){
+  allMatches = matches || [];
+  // 日期筛选
+  const dateSel = document.getElementById('dateFilter');
+  const dates = [...new Set(allMatches.map(m => m.date).filter(Boolean))].sort((a,b) => b.localeCompare(a));
+  dateSel.innerHTML = '<option value="">全部日期</option>' + dates.map(d => `<option value="${d}">${d}</option>`).join('');
+  // 选手筛选
+  const playerSel = document.getElementById('playerFilter');
+  const players = [...new Set(allMatches.flatMap(m => [m.a, m.b]).filter(Boolean))].sort((a,b) => a.localeCompare(b, 'zh'));
+  playerSel.innerHTML = '<option value="">全部选手</option>' + players.map(p => `<option value="${p}">${p}</option>`).join('');
+
+  applyMatchFilters();
+}
+
+function applyMatchFilters(){
+  const date = document.getElementById('dateFilter').value;
+  const player = document.getElementById('playerFilter').value;
+  const kw = document.getElementById('matchSearch').value.trim().toLowerCase();
+  let list = allMatches;
+  if (date) list = list.filter(m => m.date === date);
+  if (player) list = list.filter(m => m.a === player || m.b === player);
+  if (kw) list = list.filter(m =>
+    (m.a + ' ' + m.score + ' ' + m.b + ' ' + m.winner + ' ' + m.note).toLowerCase().includes(kw)
+  );
+  // 日期降序
+  list = [...list].sort((a,b) => (b.date||'').localeCompare(a.date||''));
+
+  const body = document.getElementById('matchBody');
+  if (!list.length){
+    body.innerHTML = '<tr><td colspan="5" class="empty">暂无比赛记录</td></tr>';
+    return;
+  }
+  body.innerHTML = list.map(m => `<tr>
+    <td>${m.date || '—'}</td>
+    <td><b>${m.a}</b><span class="vs"> vs </span><b>${m.b}</b></td>
+    <td><span class="score-badge">${m.score || '—'}</span></td>
+    <td>${m.winner ? `<span class="win-tag">🏆 ${m.winner}</span>` : '—'}</td>
+    <td class="match-note">${m.note || ''}</td>
+  </tr>`).join('');
+}
+
+/* ---------- 状态 ---------- */
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.firstChild.textContent = ' ' + (msg || '积分榜已更新');
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+function setStatus(mode){
+  const badge = document.getElementById('statusBadge');
+  const text = document.getElementById('statusText');
+  if (mode === 'live'){
+    badge.className = 'badge live';
+    text.textContent = '实时更新中';
+  } else if (mode === 'snapshot'){
+    badge.className = 'badge off';
+    text.textContent = '离线快照 · 请启动服务';
+  } else {
+    badge.className = 'badge off';
+    text.textContent = '连接中…';
+  }
+}
+
+/* ---------- 数据拉取 ---------- */
+async function tryFetch(url){
+  try{
+    const res = await fetch(url, {cache:'no-store'});
+    if (!res.ok) return null;
+    return await res.json();
+  }catch(e){ return null; }
+}
+
+async function loadData(){
+  let d = null;
+  d = await tryFetch('/api/data');
+  if (!d){
+    const base = (Number.isFinite(PORT) && PORT > 0) ? PORT : 8765;
+    for (let p = base; p < base + 10; p++){
+      d = await tryFetch('http://127.0.0.1:' + p + '/api/data');
+      if (d && d.players) break;
+    }
+  }
+
+  if (d && d.players){
+    if (d.version !== lastVersion){
+      lastVersion = d.version;
+      render(d);
+      renderedVersion = d.version;
+      showToast('📣 积分榜已自动更新');
+    } else if (d.version !== renderedVersion){
+      render(d);
+      renderedVersion = d.version;
+    }
+    setStatus('live');
+  } else {
+    setStatus('snapshot');
+  }
+}
+
+/* 事件绑定：比赛筛选 */
+document.getElementById('dateFilter').addEventListener('change', applyMatchFilters);
+document.getElementById('playerFilter').addEventListener('change', applyMatchFilters);
+document.getElementById('matchSearch').addEventListener('input', applyMatchFilters);
+
+/* 首次渲染 */
+render(DATA);
+setStatus('snapshot');
+if (typeof PORT === 'number' && PORT > 0){
+  loadData();
+  setInterval(loadData, 3000);
+}
+</script>
+</body>
+</html>
